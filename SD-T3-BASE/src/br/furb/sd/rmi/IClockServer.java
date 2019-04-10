@@ -1,9 +1,11 @@
 package br.furb.sd.rmi;
 
+import java.time.LocalTime;
+
 public interface IClockServer {
 
-    int getTime();
+    int getDiffTime(LocalTime time);
 
-    void setTime(int time);
+    void setDiffTime(int seconds);
 
 }
