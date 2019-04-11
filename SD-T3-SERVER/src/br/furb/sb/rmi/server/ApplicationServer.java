@@ -1,17 +1,22 @@
 package br.furb.sb.rmi.server;
 
+import br.furb.sd.application.ApplicationBase;
 import br.furb.sd.clock.ClockMock;
 import br.furb.sd.rmi.IClockServer;
 
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 
-public class ApplicationServer {
+public class ApplicationServer extends ApplicationBase {
 
     public static void main(String[] args) {
+        new ApplicationServer().run();
+    }
+
+    @Override
+    public void run() {
         System.out.println("Starting server");
 
-        ClockMock.init();
         try {
             System.out.println("Getting local RMI registry");
             Registry registry = LocateRegistry.getRegistry();

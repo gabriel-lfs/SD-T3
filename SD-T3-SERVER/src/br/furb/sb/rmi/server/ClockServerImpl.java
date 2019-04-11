@@ -15,7 +15,7 @@ public class ClockServerImpl extends UnicastRemoteObject implements IClockServer
     }
 
     @Override
-    public int getDiffTime(LocalTime time) {
+    public int getDiffTime(LocalTime time) throws RemoteException {
         try {
             System.out.println("Sending diff local time to [" + getClientHost() + "]");
 
@@ -28,7 +28,7 @@ public class ClockServerImpl extends UnicastRemoteObject implements IClockServer
     }
 
     @Override
-    public void setDiffTime(int seconds) {
+    public void setDiffTime(int seconds) throws RemoteException {
         try {
             System.out.println("Received new diff local time [" + seconds + "] from [" + getClientHost() + "]");
 

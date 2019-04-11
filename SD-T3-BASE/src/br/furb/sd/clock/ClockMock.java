@@ -15,6 +15,8 @@ public class ClockMock {
     private LocalTime timeMock = getRandomTime();
     private LocalTime newLocalTime = null;
 
+    private boolean silence = false;
+
     private ClockMock() {
         EXECUTOR_SERVICE.scheduleAtFixedRate(() -> {
             if (newLocalTime != null) {
@@ -25,7 +27,9 @@ public class ClockMock {
                 this.timeMock = newTime;
             }
 
-            System.out.println("Local time: " + getLocalTime());
+            if (!silence) {
+                System.out.println("Local time: " + getLocalTime());
+            }
         }, 1, 1, TimeUnit.SECONDS);
 
         System.out.println("ClockMock started!");
@@ -65,5 +69,13 @@ public class ClockMock {
             value = r.nextInt(max);
         }
         return value;
+    }
+
+    public final void setSilence(boolean silence) {
+        this.silence = silence;
+    }
+
+    public boolean getSilence() {
+        return this.silence;
     }
 }

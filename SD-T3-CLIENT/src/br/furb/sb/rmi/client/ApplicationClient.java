@@ -1,5 +1,6 @@
 package br.furb.sb.rmi.client;
 
+import br.furb.sd.application.ApplicationBase;
 import br.furb.sd.clock.ClockMock;
 
 import java.io.IOException;
@@ -7,10 +8,7 @@ import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.Socket;
 import java.net.SocketException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -18,42 +16,106 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class ApplicationClient {
+public class ApplicationClient extends ApplicationBase {
 
-    public static void main(String[] args) throws IOException, InterruptedException {
-        ClockMock.init();
+    public static void main(String[] args) {
+        new ApplicationClient().run();
+    }
 
-//        List<String> hosts = getHosts();
-        List<String> hosts = Collections.singletonList("127.0.0.1");
+    @Override
+    public void run() {
+        ClockMock.getInstance().setSilence(true);
+
+        int command = -1;
+        while (command != 9) {
+            System.out.println("1 - Equalize times");
+            System.out.println("2 - Print current time");
+            System.out.println("3 - Print server times");
+            System.out.println("4 - Change ClockMock silence");
+            System.out.println("9 - Exit");
+
+            command = getIntegerInput();
+
+            System.out.println("===========================================");
+            switch (command) {
+                case 1:
+                    equalizeTimes();
+                    break;
+                case 2:
+                    System.out.println(ClockMock.getInstance().getLocalTime());
+                    break;
+                case 3:
+                    printServerTimes();
+                    break;
+                case 4:
+                    ClockMock instance = ClockMock.getInstance();
+                    instance.setSilence(!instance.getSilence());
+                    break;
+                case 9:
+                    System.exit(0);
+                    break;
+                default:
+            }
+
+            System.out.println("\n");
+            printHeader();
+        }
+
+        equalizeTimes();
+    }
+
+    private void printServerTimes() {
+        List<String> hosts = getHosts();
+        ClockClient client = new ClockClient(hosts);
+        client.printHostTimes();
+    }
+
+    private int getIntegerInput() {
+        try {
+            Scanner scanner = new Scanner(System.in);
+            return scanner.nextInt();
+        } catch (Exception e) {
+        }
+        return -1;
+    }
+
+    private void equalizeTimes() {
+        List<String> hosts = getHosts();
         ClockClient client = new ClockClient(hosts);
         client.equalizeTimes();
     }
 
-    private static List<String> getHosts() throws IOException, InterruptedException {
-        System.out.println("Getting hosts address...");
+    private List<String> getHosts() {
+        try {
+            System.out.println("Getting hosts address...");
 
-        List<String> localAddresses = getLocalAddresses();
-        String localAddress = getFilteredLocalAddress(localAddresses);
-        System.out.println("Local address [" + localAddress + "]");
+            List<String> localAddresses = getLocalAddresses();
+            String localAddress = getFilteredLocalAddress(localAddresses);
+            System.out.println("Local address [" + localAddress + "]");
 
-        System.out.println("Looking for reachable hosts...");
-        List<String> possibleAddresses = getPossibleAddresses(localAddress);
-        List<String> hostsReachable = getHostsReachable(possibleAddresses);
+            System.out.println("Looking for reachable hosts...");
+            List<String> possibleAddresses = getPossibleAddresses(localAddress);
+            List<String> hostsReachable = getHostsReachable(possibleAddresses);
 
-        System.out.println("Pinging on RMI port...");
-        List<String> hosts = getHostsListenTCP(hostsReachable, 1099);
+            System.out.println("Pinging on RMI port...");
+            List<String> hosts = getHostsListenTCP(hostsReachable, 1099);
 
-        if (!hosts.isEmpty()) {
-            System.out.println("Hosts founded: ");
-            hosts.forEach(host -> System.out.println(" - " + host));
-        } else {
-            System.out.println("No one host founded");
+            if (!hosts.isEmpty()) {
+                System.out.println("Hosts founded: ");
+                hosts.forEach(host -> System.out.println(" - " + host));
+            } else {
+                System.out.println("No one host founded");
+            }
+
+            return hosts;
+        } catch (Exception e) {
+            e.printStackTrace();
         }
 
-        return hosts;
+        return null;
     }
 
-    private static List<String> getHostsListenTCP(List<String> hosts, final int port) {
+    private List<String> getHostsListenTCP(List<String> hosts, final int port) {
         List<String> validHosts = new ArrayList<>();
 
         final AtomicInteger max = new AtomicInteger(hosts.size());
@@ -81,7 +143,7 @@ public class ApplicationClient {
         return validHosts;
     }
 
-    private static List<String> getHostsReachable(List<String> possibleAddresses) {
+    private List<String> getHostsReachable(List<String> possibleAddresses) {
         final List<String> hostsReachable = new ArrayList<>();
 
         final AtomicInteger max = new AtomicInteger(possibleAddresses.size());
@@ -111,9 +173,9 @@ public class ApplicationClient {
         return hostsReachable;
     }
 
-    private static void executeThreads(Runnable r, int threads) {
+    private void executeThreads(Runnable r, int threads) {
         ExecutorService executorService = Executors.newFixedThreadPool(threads);
-        for (int i=0; i < threads; i++) {
+        for (int i = 0; i < threads; i++) {
             executorService.execute(r);
         }
         try {
@@ -124,12 +186,12 @@ public class ApplicationClient {
         }
     }
 
-    private static List<String> getPossibleAddresses(String localAddress) {
+    private List<String> getPossibleAddresses(String localAddress) {
         String startAddress = localAddress.substring(0, localAddress.lastIndexOf('.') + 1);
         String endAddress = localAddress.substring(localAddress.lastIndexOf('.'));
 
         List<String> possibleAddresses = new ArrayList<>();
-        for (int i=1; i < 255; i++) {
+        for (int i = 1; i < 255; i++) {
             String endPossibleAddress = String.valueOf(i);
             if (!endPossibleAddress.equals(endAddress)) {
                 String possibleAddress = startAddress + endPossibleAddress;
@@ -139,7 +201,7 @@ public class ApplicationClient {
         return possibleAddresses;
     }
 
-    private static String getFilteredLocalAddress(List<String> localAddresses) {
+    private String getFilteredLocalAddress(List<String> localAddresses) {
         Pattern pattern = Pattern.compile(".*\\b\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\b");
 
         for (String localAddress : localAddresses) {
@@ -152,7 +214,7 @@ public class ApplicationClient {
         return null;
     }
 
-    private static List<String> getLocalAddresses() throws SocketException {
+    private List<String> getLocalAddresses() throws SocketException {
         List<String> localAddresses = new ArrayList<>();
 
         Enumeration e = NetworkInterface.getNetworkInterfaces();
