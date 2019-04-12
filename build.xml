@@ -1,0 +1,43 @@
+<project name="SD-T3" default="dist" basedir=".">
+  <description>
+    project root
+  </description>
+  <!-- set global properties for this build -->
+  <property name="base" location="SD-T3-BASE"/>
+  <property name="client" location="SD-T3-CLIENT"/>
+  <property name="server" location="SD-T3-SERVER"/>
+  <property name="build" location="build"/>
+
+  <target name="init">
+    <!-- Create the time stamp -->
+    <tstamp/>
+    <!-- Create the build directory structure used by compile -->
+    <mkdir dir="${build}"/>
+  </target>
+
+  <target name="compile" depends="init"
+        description="compile the source">
+    <javac srcdir="${base}" destdir="${build}"/>
+    <javac srcdir="${client}" destdir="${build}"/>
+    <javac srcdir="${server}" destdir="${build}"/>
+  </target>
+
+  <target name="server" depends="compile"
+        description="generate the distribution">
+    <!-- Create the distribution directory -->
+
+    <jar jarfile="SD-T3-SERVER.jar" basedir="${build}" excludes="${build}/br/furb/sb/rmi/client/**">
+    <manifest>
+      <attribute name = "Main-Class" value = "br.furb.sb.rmi.server.ApplicationServer"/>
+   </manifest>
+    </jar>
+    </target>
+
+   <target name="client" depends="compile">
+    <jar jarfile="SD-T3-CLIENT.jar" basedir="${build}" excludes="${build}/br/furb/sb/rmi/server/**">
+    <manifest>
+      <attribute name = "Main-Class" value = "br.furb.sb.rmi.client.ApplicationClient"/>
+   </manifest>
+    </jar>
+  </target>
+</project>
